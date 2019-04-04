@@ -14,6 +14,10 @@ Inductive PyBinExpr : Type :=
   | PyBinTrue
   | PyBinFalse.
 
+Inductive PyCommand : Type :=
+  | PySkip
+  | PyAssign (x : string) (a : PyNumExpr).
+
 Fixpoint PyEval (st : state) (a : PyNumExpr) : nat :=
   match a with
   | PyLit l => l
@@ -26,6 +30,10 @@ Fixpoint PyBinEval (st : state) (b : PyBinExpr) : bool :=
   | PyBinFalse    => false
   end.
 
-Inductive PyCommand : Type :=
-  | PySkip
-  | PyAssign (x : string) (a : PyNumExpr).
+Inductive PyExec : PyCommand -> state -> state -> Prop :=
+  | Py_Skip : forall st,
+      PySkip / st \\ st
+  | Py_Assign  : forall st a1 n x,
+      PyEval st a1 = n ->
+      (PyAssign x a1) / st \\ st & { x --> n }
+  where "c1 '/' st '\\' st'" := (PyExec c1 st st').

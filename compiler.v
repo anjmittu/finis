@@ -10,7 +10,6 @@ Fixpoint numExprCompile (ae : AbNumExpr) : PyNumExpr :=
     | AbId n => PyId n
   end.
 
-
 Fixpoint compile (ac : AbCommand) : PyCommand :=
   match ac with
     | AbSkip => PySkip
@@ -18,3 +17,10 @@ Fixpoint compile (ac : AbCommand) : PyCommand :=
   end.
 
 Compute compile (AbAssign "x" (AbLit 3)).
+
+Theorem compiler_correctness : forall a : AbCommand,
+    AbExec a = PyExec (compile a).
+Proof.
+  intros.
+  induction a; simpl.
+Abort.

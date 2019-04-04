@@ -12,3 +12,6 @@ Import ListNotations.
 From LF Require Export Maps.
 
 Definition state := total_map nat.
+
+Reserved Notation "c1 '/' st '\\' st'"
+                  (at level 40, st at level 39).
