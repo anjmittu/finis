@@ -1,35 +1,38 @@
 (** * Python Language *)
+
 Set Warnings "-notation-overridden,-parsing".
 From LF Require Import imports.
 
-Inductive PyLiteral : Type :=
-  | StringLiteral (s : string)
-  | Digits (n : nat).
-
+(* Expressions that result in a nat *)
 Inductive PyNumExpr : Type :=
   | PyLit (n : nat)
   | PyId (s : string).
 
+(* Expressions that result in a bool *)
 Inductive PyBinExpr : Type :=
   | PyBinTrue
   | PyBinFalse.
 
+(* Commands from the python language *)
 Inductive PyCommand : Type :=
   | PySkip
   | PyAssign (x : string) (a : PyNumExpr).
 
+(* Evaluation of numerical expressions *)
 Fixpoint PyEval (st : state) (a : PyNumExpr) : nat :=
   match a with
   | PyLit l => l
   | PyId n => st n
   end.
 
+(* Evaluation of bool expressions *)
 Fixpoint PyBinEval (st : state) (b : PyBinExpr) : bool :=
   match b with
-  | PyBinTrue     => true
-  | PyBinFalse    => false
+  | PyBinTrue => true
+  | PyBinFalse => false
   end.
 
+(* Execution of commands *)
 Inductive PyExec : PyCommand -> state -> state -> Prop :=
   | Py_Skip : forall st,
       PySkip / st \\ st

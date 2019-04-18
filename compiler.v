@@ -18,9 +18,13 @@ Fixpoint compile (ac : AbCommand) : PyCommand :=
 
 Compute compile (AbAssign "x" (AbLit 3)).
 
-Theorem compiler_correctness : forall a : AbCommand,
-    AbExec a = PyExec (compile a).
+Theorem compiler_correctness : forall a st st1 st2,
+    (AbExec a st st1) ->
+    (PyExec (compile a) st st2) ->
+    st1 = st2.
 Proof.
   intros.
-  induction a; simpl.
-Abort.
+  induction a; simpl in *; inversion H; inversion H0; subst.
+  - reflexivity.
+  - induction a; simpl; reflexivity.    
+Qed.

@@ -3,34 +3,36 @@
 Set Warnings "-notation-overridden,-parsing".
 From LF Require Import imports.
 
-Inductive AbLiteral : Type :=
-  | StringLiteral (s : string)
-  | Digits (n : nat).
-
+(* Expressions that result in a nat *)
 Inductive AbNumExpr : Type :=
   | AbLit (n : nat)
   | AbId (s : string).
 
+(* Expressions that result in a bool *)
 Inductive AbBinExpr : Type :=
   | BinTrue
   | BinFalse.
 
+(* Commands from the transform language *)
 Inductive AbCommand : Type :=
   | AbSkip
   | AbAssign (x : string) (a : AbNumExpr).
 
+(* Evaluation of numerical expressions *)
 Fixpoint AbEval (st : state) (a : AbNumExpr) : nat :=
   match a with
   | AbLit l => l
   | AbId n => st n
   end.
 
+(* Evaluation of bool expressions *)
 Fixpoint AbBinEval (st : state) (b : AbBinExpr) : bool :=
   match b with
-  | BinTrue     => true
-  | BinFalse    => false
+  | BinTrue => true
+  | BinFalse => false
   end.
 
+(* Execution of commands *)
 Inductive AbExec : AbCommand -> state -> state -> Prop :=
   | Ab_Skip : forall st,
       AbSkip / st \\ st
