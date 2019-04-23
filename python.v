@@ -15,8 +15,9 @@ Inductive PyBinExpr : Type :=
 
 (* Commands from the python language *)
 Inductive PyCommand : Type :=
-  | PySkip
-  | PyAssign (x : string) (a : PyNumExpr).
+  | PyNewLine
+  | PyAssign (x : string) (a : PyNumExpr)
+  | PySeq (c1 : PyCommand) (c2 : PyCommand).
 
 (* Evaluation of numerical expressions *)
 Fixpoint PyEval (st : state) (a : PyNumExpr) : nat :=
@@ -34,9 +35,13 @@ Fixpoint PyBinEval (st : state) (b : PyBinExpr) : bool :=
 
 (* Execution of commands *)
 Inductive PyExec : PyCommand -> state -> state -> Prop :=
-  | Py_Skip : forall st,
-      PySkip / st \\ st
+  | Py_NewLine : forall st,
+      PyNewLine / st \\ st
   | Py_Assign  : forall st a1 n x,
       PyEval st a1 = n ->
       (PyAssign x a1) / st \\ st & { x --> n }
+  | Py_Seq : forall c1 c2 st st' st'',
+      c1 / st \\ st' ->
+      c2 / st' \\ st'' ->
+      (PySeq c1 c2) / st \\ st''
   where "c1 '/' st '\\' st'" := (PyExec c1 st st').

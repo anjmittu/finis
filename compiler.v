@@ -12,8 +12,10 @@ Fixpoint numExprCompile (ae : AbNumExpr) : PyNumExpr :=
 
 Fixpoint compile (ac : AbCommand) : PyCommand :=
   match ac with
-    | AbSkip => PySkip
+    | AbSkip => PyNewLine
     | AbAssign x a => PyAssign x (numExprCompile a)
+    | AbSeq c1 c2 => PySeq (compile c1) (compile c2)
+    | AbEnclosed c1 => compile c1
   end.
 
 Compute compile (AbAssign "x" (AbLit 3)).
@@ -25,6 +27,7 @@ Theorem compiler_correctness : forall a st st1 st2,
 Proof.
   intros.
   induction a; simpl in *; inversion H; inversion H0; subst.
-  - reflexivity.
-  - induction a; simpl; reflexivity.    
+  - (* AbSkip -> PyNewLine*) reflexivity.
+  - (* AbAssign -> PyAssign *) induction a; simpl; reflexivity.
+  - (* AbSeq -> PySeq *) induction a1. induction a2; subst.
 Qed.

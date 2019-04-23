@@ -16,7 +16,9 @@ Inductive AbBinExpr : Type :=
 (* Commands from the transform language *)
 Inductive AbCommand : Type :=
   | AbSkip
-  | AbAssign (x : string) (a : AbNumExpr).
+  | AbAssign (x : string) (a : AbNumExpr)
+  | AbSeq (c1 : AbCommand) (c2 : AbCommand)
+  | AbEnclosed (c1 : AbCommand).
 
 (* Evaluation of numerical expressions *)
 Fixpoint AbEval (st : state) (a : AbNumExpr) : nat :=
@@ -39,4 +41,11 @@ Inductive AbExec : AbCommand -> state -> state -> Prop :=
   | Ab_Assign  : forall st a1 n x,
       AbEval st a1 = n ->
       (AbAssign x a1) / st \\ st & { x --> n }
+  | Ab_Seq : forall c1 c2 st st' st'',
+      c1 / st \\ st' ->
+      c2 / st' \\ st'' ->
+      (AbSeq c1 c2) / st \\ st''
+  | Ab_Enclosed : forall c1 st st',
+      c1 / st \\ st' ->
+      (AbEnclosed c1) / st \\ st'
   where "c1 '/' st '\\' st'" := (AbExec c1 st st').
