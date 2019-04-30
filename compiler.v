@@ -29,5 +29,12 @@ Proof.
   induction a; simpl in *; inversion H; inversion H0; subst.
   - (* AbSkip -> PyNewLine*) reflexivity.
   - (* AbAssign -> PyAssign *) induction a; simpl; reflexivity.
+<<<<<<< HEAD
   - (* AbSeq -> PySeq *) destruct H3; apply IHa1. 
+=======
+  - (* AbSeq -> PySeq *) apply IHa1.
+    + induction H6.
+      * subst. assumption.
+      * rewrite IHa2. 
+>>>>>>> dcc7272b06462c88298968ed259acaba2ebb904d
 Qed.
