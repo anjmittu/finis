@@ -29,5 +29,5 @@ Proof.
   induction a; simpl in *; inversion H; inversion H0; subst.
   - (* AbSkip -> PyNewLine*) reflexivity.
   - (* AbAssign -> PyAssign *) induction a; simpl; reflexivity.
-  - (* AbSeq -> PySeq *) induction a1. induction a2; subst.
+  - (* AbSeq -> PySeq *) destruct H3; apply IHa1. 
 Qed.
