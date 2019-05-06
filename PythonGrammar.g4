@@ -1,13 +1,13 @@
-start : transform start | EOF;
+start : assignment start | expr start | EOF;
 
-transform : ID '=' expr
+assignment : ID '=' expr
 
 expr
     : num_expr                                                  # num_expr
     | bin_expr                                                  # bin_expr
-    | 'while' '(' bin_expr ')' expr? ':' ID                     # while_expr
-    | 'for' '(' ID 'in' expr ')' expr? ':' ID                   # foreach_expr
-    | 'if' '(' bin_expr ')' expr ('else' expr)?                 # if_expr
+    | 'while' bin_expr ':' expr                                 # while_expr
+    | 'for' ID 'in' expr ':' expr?                              # foreach_expr
+    | 'if' bin_expr ':' expr ('else' ':' expr)?                 # if_expr
     | '(' expr ')'                                              # enclose_expr
     ;
 
@@ -25,8 +25,8 @@ bin_expr
     | num_expr '>' num_expr
     | num_expr '==' num_expr
     | num_expr '!=' num_expr
-    | bin_expr LogicalAnd bin_expr
-    | bin_expr LogicalOr bin_expr
+    | bin_expr 'and' bin_expr
+    | bin_expr 'or' bin_expr
     ;
 
 unary_op : 'not' | '!' | '~' ;
@@ -34,8 +34,7 @@ unary_op : 'not' | '!' | '~' ;
 num :
     literal
     | ID
-    | ID '[' num ']'
-    | ID '.' ID;
+    | ID '[' (num | ID) ']';
 
 literal
     : StringLiteral
@@ -46,13 +45,10 @@ StringLiteral
     : \" NONDIGIT+ \"
     | \' NONDIGIT+ \'
     ;
+
+
 Digits : DIGIT+;
 bool_literal : 'True' | 'False' ;
-
-
-LogicalAnd : ('and'    | '&&' );
-LogicalOr  : ('or' | '||');
-
 fragment NONDIGIT   : [a-zA-Z_\-];
 fragment START_CHAR : [a-zA-Z_];
 fragment DIGIT : [0-9];
