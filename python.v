@@ -3,27 +3,47 @@
 Set Warnings "-notation-overridden,-parsing".
 From LF Require Import imports.
 
-(* Expressions that result in a nat *)
-Inductive PyNumExpr : Type :=
+(* Values that result in a nat *)
+Inductive PyNum : Type :=
   | PyLit (n : nat)
   | PyId (s : string).
 
-(* Expressions that result in a bool *)
+(* Values that result in a bool *)
 Inductive PyBinExpr : Type :=
   | PyBinTrue
   | PyBinFalse.
 
-(* Commands from the python language *)
-Inductive PyCommand : Type :=
-  | PyNewLine
-  | PyAssign (x : string) (a : PyNumExpr)
-  | PySeq (c1 : PyCommand) (c2 : PyCommand).
+(* Numerical expressions *)
+Inductive PyNumExpr : Type :=
+  | PyNum2 (n : PyNum)
+  | PyAdd (a1 : PyNumExpr) (a2 : PyNumExpr)
+  | PySub (a1 : PyNumExpr) (a2 : PyNumExpr)
+  | PyMulti (a1 : PyNumExpr) (a2 : PyNumExpr).
 
-(* Evaluation of numerical expressions *)
-Fixpoint PyEval (st : state) (a : PyNumExpr) : nat :=
+(* Expressions from the python language *)
+Inductive PyExpr : Type :=
+  | Py_Num_Expr (a : PyNumExpr).
+
+(* Commands from the Python language *)
+Inductive PyCommand : Type :=
+  | PyAssign (x : string) (a : PyExpr)
+  | PyStat (e : PyExpr)
+  | PySeq (c1 c2 : PyCommand).
+
+(* Evaluation of numerical values *)
+Fixpoint PyEvalNumVal (st : state) (a : PyNum) : nat :=
   match a with
   | PyLit l => l
   | PyId n => st n
+  end.
+
+(* Evaluation of numerical expressions *)
+Fixpoint PyEvalNum (st : state) (a : PyNumExpr) : nat :=
+  match a with
+  | PyNum2 n => PyEvalNumVal st n
+  | PyAdd a1 a2 => (PyEvalNum st a1) + (PyEvalNum st a2)
+  | PySub a1 a2 => (PyEvalNum st a1) - (PyEvalNum st a2)
+  | PyMulti a1 a2 => (PyEvalNum st a1) * (PyEvalNum st a2)
   end.
 
 (* Evaluation of bool expressions *)
@@ -33,15 +53,23 @@ Fixpoint PyBinEval (st : state) (b : PyBinExpr) : bool :=
   | PyBinFalse => false
   end.
 
+(* TODO allow bools to be returned *)
+(* Evaluation of expressions *)
+Fixpoint PyEval (st : state) (a : PyExpr) : nat :=
+  match a with
+  | Py_Num_Expr a => PyEvalNum st a
+  end.
+
 (* Execution of commands *)
-Inductive PyExec : PyCommand -> state -> state -> Prop :=
-  | Py_NewLine : forall st,
-      PyNewLine / st \\ st
+Inductive PythonProgram : PyCommand -> state -> state -> Prop :=
   | Py_Assign  : forall st a1 n x,
-      PyEval st a1 = n ->
-      (PyAssign x a1) / st \\ st & { x --> n }
+      PyEvalNum st a1 = n ->
+      (PyAssign x (Py_Num_Expr (PyNum2 (PyLit n)))) / st \\ st & { x --> n }
+  | Py_Stat  : forall st a1 n,
+      PyEvalNum st a1 = n ->
+      (PyStat (Py_Num_Expr (PyNum2 (PyLit n)))) / st \\ st
   | Py_Seq : forall c1 c2 st st' st'',
       c1 / st \\ st' ->
       c2 / st' \\ st'' ->
       (PySeq c1 c2) / st \\ st''
-  where "c1 '/' st '\\' st'" := (PyExec c1 st st').
+  where "c1 '/' st '\\' st'" := (PythonProgram c1 st st').
