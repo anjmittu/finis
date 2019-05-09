@@ -1,7 +1,19 @@
 (** * Python Language *)
+(** This file describes the relevent portion of the Python Language needed for
+    this compiler.  In python, expression can either be evaluated on their own or
+    assigned to a variable.  Expressions on their own do not change the state of the program.
+    An example Python program is:
+        field1 = 10
+        4 * 10
+        field2 = field1 * 4
+        field3 = field1 + field2
+        field1 + field3
+    *)
 
 Set Warnings "-notation-overridden,-parsing".
 From LF Require Import imports.
+
+(* DECLARATIONS OF PYTHON TYPES *)
 
 (* Values that result in a nat *)
 Inductive PyNum : Type :=
@@ -29,6 +41,8 @@ Inductive PyCommand : Type :=
   | PyAssign (x : string) (a : PyExpr)
   | PyStat (e : PyExpr)
   | PySeq (c1 c2 : PyCommand).
+
+(* EVALUATIONS OF PYTHON TYPES *)
 
 (* Evaluation of numerical values *)
 Fixpoint PyEvalNumVal (st : state) (a : PyNum) : nat :=
@@ -59,6 +73,8 @@ Fixpoint PyEval (st : state) (a : PyExpr) : nat :=
   match a with
   | Py_Num_Expr a => PyEvalNum st a
   end.
+
+(* OPERATIONAL SEMANTICS OF PYTHON COMMANDS *)
 
 (* Execution of commands *)
 Inductive PythonProgram : PyCommand -> state -> state -> Prop :=

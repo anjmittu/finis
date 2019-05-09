@@ -1,7 +1,16 @@
 (** * Transform Language *)
+(** This file describes the Ab Intio Transform Language.  In this language, everything is
+    a transformation.  Ab Initio programs are sequences of transformations.  An example
+    Ab Initio program is:
+        field1 :: 10
+        field2 :: field1 * 4
+        field3 :: field1 + field2
+    *)
 
 Set Warnings "-notation-overridden,-parsing".
 From LF Require Import imports.
+
+(* DECLARATIONS OF AB INITIO TYPES *)
 
 (* Values that result in a nat *)
 Inductive AbNum : Type :=
@@ -28,6 +37,8 @@ Inductive AbExpr : Type :=
 Inductive AbCommand : Type :=
   | AbTransform (x : string) (a : AbExpr)
   | AbSeq (c1 c2 : AbCommand).
+
+(* EVALUATIONS OF AB INITIO TYPES *)
 
 (* Evaluation of numerical values *)
 Fixpoint AbEvalNumVal (st : state) (a : AbNum) : nat :=
@@ -58,6 +69,8 @@ Fixpoint AbEval (st : state) (a : AbExpr) : nat :=
   match a with
   | Ab_Num_Expr a => AbEvalNum st a
   end.
+
+(* OPERATIONAL SEMANTICS OF AB INITIO COMMANDS *)
 
 (* Execution of commands *)
 Inductive AbInitioProgram : AbCommand -> state -> state -> Prop :=

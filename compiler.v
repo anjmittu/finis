@@ -60,28 +60,26 @@ Theorem compiler_correctness : forall a st st1 st2,
     (PythonProgram (compile a) st st2) ->
     st1 = st2.
 Proof.
-  intros.
-
-
-
-
-
-  
   induction a.
   - (* AbTransform -> PyAssign *)
     induction a.
-    * (* AbNum2 -> PyNum2 *)
-      simpl in *.
+    (* Ab_Num_Expr -> Py_Num_Expr *)
+    induction a; intros.
+    (* AbNum2 -> PyNum2 *)
+      induction n; simpl in *; inversion H; inversion H0; subst; reflexivity.
+    + (* AbAdd -> PyAdd *)
+      inversion H.
+    + (* AbSub -> PySub *)
+      inversion H.
+    + (* AbMulti -> PyMulti *)
+      inversion H.
+  - (* AbSeq -> PySeq *)
+    intros st st1 st2 H1 H2.
+    
+    inversion H. inversion H0. subst.
+    induction a1; induction a2.
+    simpl in *.
+    
+    + (* AbTransform -> PyAssign *)
       
-      inversion H; inversion H0; subst. reflexivity.
-    * (* AbAdd -> PyAdd *)
-      inversion H. inversion H0. subst. .
-      apply IHa1.
-      + apply H.
-  - (* AbSkip -> PyNewLine*) reflexivity.
-  - (* AbAssign -> PyAssign *) induction a; simpl; reflexivity.
-  - (* AbSeq -> PySeq *) apply IHa1.
-    + induction H6.
-      * subst. assumption.
-      * rewrite IHa2.
 Qed.
