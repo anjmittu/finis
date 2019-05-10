@@ -12,15 +12,15 @@ From LF Require Import imports.
 
 (* DECLARATIONS OF AB INITIO TYPES *)
 
+(* Values *)
+Inductive AbValue : Type :=
+  | AbNat (n : nat)
+  | AbBool (b : bool).
+
 (* Values that result in a nat *)
 Inductive AbNum : Type :=
   | AbLit (n : nat)
   | AbId (s : string).
-
-(* Values that result in a bool *)
-Inductive AbBinExpr : Type :=
-  | BinTrue
-  | BinFalse.
 
 (* Numerical expressions *)
 Inductive AbNumExpr : Type :=
@@ -29,9 +29,21 @@ Inductive AbNumExpr : Type :=
   | AbSub (a1 : AbNumExpr) (a2 : AbNumExpr)
   | AbMulti (a1 : AbNumExpr) (a2 : AbNumExpr).
 
+(* Values that result in a bool *)
+Inductive AbBinExpr : Type :=
+  | BinTrue
+  | BinFalse
+  | AbUnaryOp (b : AbBinExpr)
+  | AbLe (a1 : AbNumExpr) (a2 : AbNumExpr)
+  | AbEq (a1 : AbNumExpr) (a2 : AbNumExpr)
+  | AbNotEq (a1 : AbNumExpr) (a2 : AbNumExpr)
+  | AbAnd (b1 : AbBinExpr) (b2 : AbBinExpr)
+  | AbOr (b1 : AbBinExpr) (b2 : AbBinExpr).
+
 (* Expressions from the transform language *)
 Inductive AbExpr : Type :=
-  | Ab_Num_Expr (a : AbNumExpr).
+  | Ab_Num_Expr (a : AbNumExpr)
+  | Ab_Bin_Expr (b : AbBinExpr).
 
 (* Commands from the transform language *)
 Inductive AbCommand : Type :=
@@ -57,17 +69,23 @@ Fixpoint AbEvalNum (st : state) (a : AbNumExpr) : nat :=
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint AbBinEval (st : state) (b : AbBinExpr) : bool :=
+Fixpoint AbEvalBin (st : state) (b : AbBinExpr) : bool :=
   match b with
   | BinTrue => true
   | BinFalse => false
+  | AbUnaryOp b => negb (AbEvalBin st b)
+  | AbLe a1 a2 => leb (AbEvalNum st a1) (AbEvalNum st a2)
+  | AbEq a1 a2 => Nat.eqb (AbEvalNum st a1) (AbEvalNum st a2)
+  | AbNotEq a1 a2 => negb (Nat.eqb (AbEvalNum st a1) (AbEvalNum st a2))
+  | AbAnd b1 b2 => andb (AbEvalBin st b1) (AbEvalBin st b2)
+  | AbOr b1 b2 => orb (AbEvalBin st b1) (AbEvalBin st b2)
   end.
 
-(* TODO allow bools to be returned *)
 (* Evaluation of expressions *)
-Fixpoint AbEval (st : state) (a : AbExpr) : nat :=
+Fixpoint AbEval (st : state) (a : AbExpr) : AbValue :=
   match a with
-  | Ab_Num_Expr a => AbEvalNum st a
+  | Ab_Num_Expr a => AbNat (AbEvalNum st a)
+  | Ab_Bin_Expr b => AbBool (AbEvalBin st b)
   end.
 
 (* OPERATIONAL SEMANTICS OF AB INITIO COMMANDS *)

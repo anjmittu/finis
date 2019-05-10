@@ -15,15 +15,15 @@ From LF Require Import imports.
 
 (* DECLARATIONS OF PYTHON TYPES *)
 
+(* Values *)
+Inductive PyValue : Type :=
+  | PyNat (n : nat)
+  | PyBool (b : bool).
+
 (* Values that result in a nat *)
 Inductive PyNum : Type :=
   | PyLit (n : nat)
   | PyId (s : string).
-
-(* Values that result in a bool *)
-Inductive PyBinExpr : Type :=
-  | PyBinTrue
-  | PyBinFalse.
 
 (* Numerical expressions *)
 Inductive PyNumExpr : Type :=
@@ -32,9 +32,21 @@ Inductive PyNumExpr : Type :=
   | PySub (a1 : PyNumExpr) (a2 : PyNumExpr)
   | PyMulti (a1 : PyNumExpr) (a2 : PyNumExpr).
 
+(* Values that result in a bool *)
+Inductive PyBinExpr : Type :=
+  | PyBinTrue
+  | PyBinFalse
+  | PyUnaryOp (b : PyBinExpr)
+  | PyLe (a1 : PyNumExpr) (a2 : PyNumExpr)
+  | PyEq (a1 : PyNumExpr) (a2 : PyNumExpr)
+  | PyNotEq (a1 : PyNumExpr) (a2 : PyNumExpr)
+  | PyAnd (b1 : PyBinExpr) (b2 : PyBinExpr)
+  | PyOr (b1 : PyBinExpr) (b2 : PyBinExpr).
+
 (* Expressions from the python language *)
 Inductive PyExpr : Type :=
-  | Py_Num_Expr (a : PyNumExpr).
+  | Py_Num_Expr (a : PyNumExpr)
+  | Py_Bin_Expr (b : PyBinExpr).
 
 (* Commands from the Python language *)
 Inductive PyCommand : Type :=
@@ -61,17 +73,23 @@ Fixpoint PyEvalNum (st : state) (a : PyNumExpr) : nat :=
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint PyBinEval (st : state) (b : PyBinExpr) : bool :=
+Fixpoint PyEvalBin (st : state) (b : PyBinExpr) : bool :=
   match b with
   | PyBinTrue => true
   | PyBinFalse => false
+  | PyUnaryOp b => negb (PyEvalBin st b)
+  | PyLe a1 a2 => leb (PyEvalNum st a1) (PyEvalNum st a2)
+  | PyEq a1 a2 => Nat.eqb (PyEvalNum st a1) (PyEvalNum st a2)
+  | PyNotEq a1 a2 => negb (Nat.eqb (PyEvalNum st a1) (PyEvalNum st a2))
+  | PyAnd b1 b2 => andb (PyEvalBin st b1) (PyEvalBin st b2)
+  | PyOr b1 b2 => orb (PyEvalBin st b1) (PyEvalBin st b2)
   end.
 
-(* TODO allow bools to be returned *)
 (* Evaluation of expressions *)
-Fixpoint PyEval (st : state) (a : PyExpr) : nat :=
+Fixpoint PyEval (st : state) (a : PyExpr) : PyValue :=
   match a with
-  | Py_Num_Expr a => PyEvalNum st a
+  | Py_Num_Expr a => PyNat (PyEvalNum st a)
+  | Py_Bin_Expr b => PyBool (PyEvalBin st b)
   end.
 
 (* OPERATIONAL SEMANTICS OF PYTHON COMMANDS *)

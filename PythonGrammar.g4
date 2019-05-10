@@ -22,7 +22,6 @@ bin_expr
     : bool_literal
     | unary_op bin_expr
     | num_expr '<' num_expr
-    | num_expr '>' num_expr
     | num_expr '==' num_expr
     | num_expr '!=' num_expr
     | bin_expr 'and' bin_expr
