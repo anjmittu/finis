@@ -12,33 +12,28 @@ From LF Require Import imports.
 
 (* DECLARATIONS OF AB INITIO TYPES *)
 
-(* Values *)
-Inductive AbValue : Type :=
-  | AbNat (n : nat)
-  | AbBool (b : bool).
-
-(* Values that result in a nat *)
-Inductive AbNum : Type :=
-  | AbLit (n : nat)
-  | AbId (s : string).
-
 (* Numerical expressions *)
 Inductive AbNumExpr : Type :=
-  | AbNum2 (n : AbNum)
-  | AbAdd (a1 : AbNumExpr) (a2 : AbNumExpr)
-  | AbSub (a1 : AbNumExpr) (a2 : AbNumExpr)
-  | AbMulti (a1 : AbNumExpr) (a2 : AbNumExpr).
+  | AbNatLit (n : prog_value) (* Natural number literals *)
+  | AbIdNat (s : string) (* ID of a natural number stored in the program state *)
+  | AbVectorValue (s : string) (n : nat) (* Natural number stored in a vector *)
+  | AbAdd (a1 : AbNumExpr) (a2 : AbNumExpr) (* Adding two natural numbers *)
+  | AbSub (a1 : AbNumExpr) (a2 : AbNumExpr) (* Subtracting two natural numbers *)
+  | AbMulti (a1 : AbNumExpr) (a2 : AbNumExpr) (* Multiplying two natural numbers *)
+  .
 
 (* Values that result in a bool *)
 Inductive AbBinExpr : Type :=
-  | BinTrue
-  | BinFalse
-  | AbUnaryOp (b : AbBinExpr)
-  | AbLe (a1 : AbNumExpr) (a2 : AbNumExpr)
-  | AbEq (a1 : AbNumExpr) (a2 : AbNumExpr)
-  | AbNotEq (a1 : AbNumExpr) (a2 : AbNumExpr)
-  | AbAnd (b1 : AbBinExpr) (b2 : AbBinExpr)
-  | AbOr (b1 : AbBinExpr) (b2 : AbBinExpr).
+  | BinTrue (* True *)
+  | BinFalse (* False *)
+  | AbIdBool (s : string) (* ID of a boolean stored in the program state *)
+  | AbUnaryOp (b : AbBinExpr) (* Unary Op on a boolean *)
+  | AbLe (a1 : AbNumExpr) (a2 : AbNumExpr) (* Less than op on two natural numbers *)
+  | AbEq (a1 : AbNumExpr) (a2 : AbNumExpr) (* Equal op on two natural numbers *)
+  | AbNotEq (a1 : AbNumExpr) (a2 : AbNumExpr) (* Not equal op on two natural numbers *)
+  | AbAnd (b1 : AbBinExpr) (b2 : AbBinExpr) (* And op on two booleans *)
+  | AbOr (b1 : AbBinExpr) (b2 : AbBinExpr) (* Or op on two booleans *)
+  .
 
 (* Expressions from the transform language *)
 Inductive AbExpr : Type :=
@@ -50,42 +45,49 @@ Inductive AbCommand : Type :=
   | AbTransform (x : string) (a : AbExpr)
   | AbSeq (c1 c2 : AbCommand).
 
+
+
 (* EVALUATIONS OF AB INITIO TYPES *)
 
-(* Evaluation of numerical values *)
-Fixpoint AbEvalNumVal (st : state) (a : AbNum) : nat :=
-  match a with
-  | AbLit l => l
-  | AbId n => st n
-  end.
-
 (* Evaluation of numerical expressions *)
-Fixpoint AbEvalNum (st : state) (a : AbNumExpr) : nat :=
+Fixpoint AbEvalNum (st : state) (a : AbNumExpr) : prog_value :=
   match a with
-  | AbNum2 n => AbEvalNumVal st n
-  | AbAdd a1 a2 => (AbEvalNum st a1) + (AbEvalNum st a2)
-  | AbSub a1 a2 => (AbEvalNum st a1) - (AbEvalNum st a2)
-  | AbMulti a1 a2 => (AbEvalNum st a1) * (AbEvalNum st a2)
+  | AbNatLit l => l
+  | AbIdNat s => match st s with
+                 | pNat n => pNat n
+                 | _ => pNull
+                 end
+  | AbVectorValue s n => match st s with
+                            | pList v => getValueList v n
+                            | _ => pNull
+                            end
+  | AbAdd a1 a2 => pNat (pullOutNat (AbEvalNum st a1) + pullOutNat (AbEvalNum st a2))
+  | AbSub a1 a2 => pNat (pullOutNat (AbEvalNum st a1) - pullOutNat (AbEvalNum st a2))
+  | AbMulti a1 a2 => pNat (pullOutNat (AbEvalNum st a1) * pullOutNat (AbEvalNum st a2))
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint AbEvalBin (st : state) (b : AbBinExpr) : bool :=
+Fixpoint AbEvalBin (st : state) (b : AbBinExpr) : prog_value :=
   match b with
-  | BinTrue => true
-  | BinFalse => false
-  | AbUnaryOp b => negb (AbEvalBin st b)
-  | AbLe a1 a2 => leb (AbEvalNum st a1) (AbEvalNum st a2)
-  | AbEq a1 a2 => Nat.eqb (AbEvalNum st a1) (AbEvalNum st a2)
-  | AbNotEq a1 a2 => negb (Nat.eqb (AbEvalNum st a1) (AbEvalNum st a2))
-  | AbAnd b1 b2 => andb (AbEvalBin st b1) (AbEvalBin st b2)
-  | AbOr b1 b2 => orb (AbEvalBin st b1) (AbEvalBin st b2)
+  | BinTrue => pBool true
+  | BinFalse => pBool false
+  | AbIdBool s => match st s with
+                 | pBool b => pBool b
+                 | _ => pNull
+                 end
+  | AbUnaryOp b => pBool (negb (pullOutBool (AbEvalBin st b)))
+  | AbLe a1 a2 => pBool (leb (pullOutNat (AbEvalNum st a1)) (pullOutNat (AbEvalNum st a2)))
+  | AbEq a1 a2 => pBool (Nat.eqb (pullOutNat (AbEvalNum st a1)) (pullOutNat (AbEvalNum st a2)))
+  | AbNotEq a1 a2 => pBool (negb (Nat.eqb (pullOutNat (AbEvalNum st a1)) (pullOutNat (AbEvalNum st a2))))
+  | AbAnd b1 b2 => pBool (andb (pullOutBool (AbEvalBin st b1)) (pullOutBool (AbEvalBin st b2)))
+  | AbOr b1 b2 => pBool (orb (pullOutBool (AbEvalBin st b1)) (pullOutBool (AbEvalBin st b2)))
   end.
 
 (* Evaluation of expressions *)
-Fixpoint AbEval (st : state) (a : AbExpr) : AbValue :=
+Fixpoint AbEval (st : state) (a : AbExpr) : prog_value :=
   match a with
-  | Ab_Num_Expr a => AbNat (AbEvalNum st a)
-  | Ab_Bin_Expr b => AbBool (AbEvalBin st b)
+  | Ab_Num_Expr a => AbEvalNum st a
+  | Ab_Bin_Expr b => AbEvalBin st b
   end.
 
 (* OPERATIONAL SEMANTICS OF AB INITIO COMMANDS *)
@@ -94,7 +96,7 @@ Fixpoint AbEval (st : state) (a : AbExpr) : AbValue :=
 Inductive AbInitioProgram : AbCommand -> state -> state -> Prop :=
   | Ab_Transform  : forall st a1 n x,
       AbEvalNum st a1 = n ->
-      (AbTransform x (Ab_Num_Expr (AbNum2 (AbLit n)))) / st \\ st & { x --> n }
+      (AbTransform x (Ab_Num_Expr (AbNatLit n))) / st \\ st & { x --> n }
   | Ab_Seq : forall c1 c2 st st' st'',
       c1 / st \\ st' ->
       c2 / st' \\ st'' ->

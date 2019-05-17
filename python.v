@@ -15,33 +15,28 @@ From LF Require Import imports.
 
 (* DECLARATIONS OF PYTHON TYPES *)
 
-(* Values *)
-Inductive PyValue : Type :=
-  | PyNat (n : nat)
-  | PyBool (b : bool).
-
-(* Values that result in a nat *)
-Inductive PyNum : Type :=
-  | PyLit (n : nat)
-  | PyId (s : string).
-
 (* Numerical expressions *)
 Inductive PyNumExpr : Type :=
-  | PyNum2 (n : PyNum)
-  | PyAdd (a1 : PyNumExpr) (a2 : PyNumExpr)
-  | PySub (a1 : PyNumExpr) (a2 : PyNumExpr)
-  | PyMulti (a1 : PyNumExpr) (a2 : PyNumExpr).
+  | PyNatLit (n : prog_value) (* Natural number literals *)
+  | PyIdNat (s : string) (* ID of a natural number stored in the program state *)
+  | PyArrayValue (s : string) (n : nat) (* Natural number stored in a vector *)
+  | PyAdd (a1 : PyNumExpr) (a2 : PyNumExpr) (* Adding two natural numbers *)
+  | PySub (a1 : PyNumExpr) (a2 : PyNumExpr) (* Subtracting two natural numbers *)
+  | PyMulti (a1 : PyNumExpr) (a2 : PyNumExpr) (* Multiplying two natural numbers *)
+  .
 
 (* Values that result in a bool *)
 Inductive PyBinExpr : Type :=
-  | PyBinTrue
-  | PyBinFalse
-  | PyUnaryOp (b : PyBinExpr)
-  | PyLe (a1 : PyNumExpr) (a2 : PyNumExpr)
-  | PyEq (a1 : PyNumExpr) (a2 : PyNumExpr)
-  | PyNotEq (a1 : PyNumExpr) (a2 : PyNumExpr)
-  | PyAnd (b1 : PyBinExpr) (b2 : PyBinExpr)
-  | PyOr (b1 : PyBinExpr) (b2 : PyBinExpr).
+  | PyBinTrue (* True *)
+  | PyBinFalse (* False *)
+  | PyIdBool (s : string) (* ID of a boolean stored in the program state *)
+  | PyUnaryOp (b : PyBinExpr) (* Unary Op on a boolean *)
+  | PyLe (a1 : PyNumExpr) (a2 : PyNumExpr) (* Less than op on two natural numbers *)
+  | PyEq (a1 : PyNumExpr) (a2 : PyNumExpr) (* Equal op on two natural numbers *)
+  | PyNotEq (a1 : PyNumExpr) (a2 : PyNumExpr) (* Not equal op on two natural numbers *)
+  | PyAnd (b1 : PyBinExpr) (b2 : PyBinExpr) (* And op on two booleans *)
+  | PyOr (b1 : PyBinExpr) (b2 : PyBinExpr) (* Or op on two booleans *)
+  .
 
 (* Expressions from the python language *)
 Inductive PyExpr : Type :=
@@ -54,42 +49,50 @@ Inductive PyCommand : Type :=
   | PyStat (e : PyExpr)
   | PySeq (c1 c2 : PyCommand).
 
+
+
+
 (* EVALUATIONS OF PYTHON TYPES *)
 
-(* Evaluation of numerical values *)
-Fixpoint PyEvalNumVal (st : state) (a : PyNum) : nat :=
-  match a with
-  | PyLit l => l
-  | PyId n => st n
-  end.
-
 (* Evaluation of numerical expressions *)
-Fixpoint PyEvalNum (st : state) (a : PyNumExpr) : nat :=
+Fixpoint PyEvalNum (st : state) (a : PyNumExpr) : prog_value :=
   match a with
-  | PyNum2 n => PyEvalNumVal st n
-  | PyAdd a1 a2 => (PyEvalNum st a1) + (PyEvalNum st a2)
-  | PySub a1 a2 => (PyEvalNum st a1) - (PyEvalNum st a2)
-  | PyMulti a1 a2 => (PyEvalNum st a1) * (PyEvalNum st a2)
+  | PyNatLit l => l
+  | PyIdNat s => match st s with
+              | pNat n => pNat n
+              | _ => pNull
+              end
+  | PyArrayValue s n => match st s with
+                         | pList v => getValueList v n
+                         | _ => pNull
+                         end
+  | PyAdd a1 a2 => pNat (pullOutNat (PyEvalNum st a1) + pullOutNat (PyEvalNum st a2))
+  | PySub a1 a2 => pNat (pullOutNat (PyEvalNum st a1) - pullOutNat (PyEvalNum st a2))
+  | PyMulti a1 a2 => pNat (pullOutNat (PyEvalNum st a1) * pullOutNat (PyEvalNum st a2))
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint PyEvalBin (st : state) (b : PyBinExpr) : bool :=
+Fixpoint PyEvalBin (st : state) (b : PyBinExpr) : prog_value :=
   match b with
-  | PyBinTrue => true
-  | PyBinFalse => false
-  | PyUnaryOp b => negb (PyEvalBin st b)
-  | PyLe a1 a2 => leb (PyEvalNum st a1) (PyEvalNum st a2)
-  | PyEq a1 a2 => Nat.eqb (PyEvalNum st a1) (PyEvalNum st a2)
-  | PyNotEq a1 a2 => negb (Nat.eqb (PyEvalNum st a1) (PyEvalNum st a2))
-  | PyAnd b1 b2 => andb (PyEvalBin st b1) (PyEvalBin st b2)
-  | PyOr b1 b2 => orb (PyEvalBin st b1) (PyEvalBin st b2)
+  | PyBinTrue => pBool true
+  | PyBinFalse => pBool false
+  | PyIdBool s => match st s with
+                 | pBool b => pBool b
+                 | _ => pNull
+                 end
+  | PyUnaryOp b => pBool (negb (pullOutBool (PyEvalBin st b)))
+  | PyLe a1 a2 => pBool (leb (pullOutNat (PyEvalNum st a1)) (pullOutNat (PyEvalNum st a2)))
+  | PyEq a1 a2 => pBool (Nat.eqb (pullOutNat (PyEvalNum st a1)) (pullOutNat (PyEvalNum st a2)))
+  | PyNotEq a1 a2 => pBool (negb (Nat.eqb (pullOutNat (PyEvalNum st a1)) (pullOutNat (PyEvalNum st a2))))
+  | PyAnd b1 b2 => pBool (andb (pullOutBool (PyEvalBin st b1)) (pullOutBool (PyEvalBin st b2)))
+  | PyOr b1 b2 => pBool (orb (pullOutBool (PyEvalBin st b1)) (pullOutBool (PyEvalBin st b2)))
   end.
 
 (* Evaluation of expressions *)
-Fixpoint PyEval (st : state) (a : PyExpr) : PyValue :=
+Fixpoint PyEval (st : state) (a : PyExpr) : prog_value :=
   match a with
-  | Py_Num_Expr a => PyNat (PyEvalNum st a)
-  | Py_Bin_Expr b => PyBool (PyEvalBin st b)
+  | Py_Num_Expr a => PyEvalNum st a
+  | Py_Bin_Expr b => PyEvalBin st b
   end.
 
 (* OPERATIONAL SEMANTICS OF PYTHON COMMANDS *)
@@ -98,10 +101,10 @@ Fixpoint PyEval (st : state) (a : PyExpr) : PyValue :=
 Inductive PythonProgram : PyCommand -> state -> state -> Prop :=
   | Py_Assign  : forall st a1 n x,
       PyEvalNum st a1 = n ->
-      (PyAssign x (Py_Num_Expr (PyNum2 (PyLit n)))) / st \\ st & { x --> n }
+      (PyAssign x (Py_Num_Expr (PyNatLit n))) / st \\ st & { x --> n }
   | Py_Stat  : forall st a1 n,
       PyEvalNum st a1 = n ->
-      (PyStat (Py_Num_Expr (PyNum2 (PyLit n)))) / st \\ st
+      (PyStat (Py_Num_Expr (PyNatLit n))) / st \\ st
   | Py_Seq : forall c1 c2 st st' st'',
       c1 / st \\ st' ->
       c2 / st' \\ st'' ->
