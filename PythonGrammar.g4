@@ -5,9 +5,6 @@ assignment : ID '=' expr
 expr
     : num_expr                                                  # num_expr
     | bin_expr                                                  # bin_expr
-    | 'while' bin_expr ':' expr                                 # while_expr
-    | 'for' ID 'in' expr ':' expr?                              # foreach_expr
-    | 'if' bin_expr ':' expr ('else' ':' expr)?                 # if_expr
     | '(' expr ')'                                              # enclose_expr
     ;
 

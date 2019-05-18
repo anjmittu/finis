@@ -5,9 +5,6 @@ transform : ID '=' expr
 expr
     : num_expr                                                  # num_expr
     | bin_expr                                                  # bin_expr
-    | 'while' '(' bin_expr ')' expr? ':' ID                     # while_expr
-    | 'for' '(' ID 'in' expr ')' expr? ':' ID                   # foreach_expr
-    | 'if' '(' bin_expr ')' expr ('else' expr)?                 # if_expr
     | '(' expr ')'                                              # enclose_expr
     ;
 

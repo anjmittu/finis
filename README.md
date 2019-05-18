@@ -42,15 +42,19 @@ this file, I define the language's syntax, and evaluation.
 
 ## Challenges
 * _Picking a subset of the language to compile_: Ab Initio commands are mainly based on
-transformations on a data table.  I was not sure how I would represent a data frame in coq.  Because of this, I tried to start with a portion Ab Initio language that would work with basic
-types.  This ended up mainly being arithmetic or boolean expressions, which were already close to how they are represented in Python.  Because of this, much of the compiler is simple;
+transformations on a data table.  I was not sure how I would represent a data frame in
+coq.  Because of this, I tried to start with a portion Ab Initio language that would work with basic
+types.  This ended up mainly being arithmetic or boolean expressions, which were already close
+to how they are represented in Python.  Because of this, much of the compiler is simple;
 there's not much difference between the Ab Initio and python implementation.
 
 * _Allowing different types to be returned_: One interesting different between Ab Initio
-python is how they implement loops.  In Ab Initio, for loops and while loops always return a list (or vector as called in Ab Initio).  Because of this, I wanted to add lists as a value to my
+python is how they implement loops.  In Ab Initio, for loops and while loops always return a
+list (or vector as called in Ab Initio).  Because of this, I wanted to add lists as a value to my
 compiler.  Since fixpoints in coq can only return one type of value, I had to create a type
 to wrap around all the values that would be returned.  At first, I tried to define separate
 types for Ab Initio and for python.  This was made proving equivalence between the two languages
 difficult, as they were always returning different types.  It also made proving equivalence between
 the states difficult, as the states mapped to different types.  To mitigate this problem, I
-created a shared type (`pvalue`) to represent values returned from both languages.
+created a shared type (`pvalue`) to represent values returned from both languages.  Adding lists took
+more time than expected, so I did not get a chance to add while loops.
