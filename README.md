@@ -1,5 +1,6 @@
 # finis
 An Ab Initio Transform to Python compiler
+Note: *To run this prject there must be a compiled version of Maps.v from class in this directory*
 
 ## Project Goal
 It has been shown that Ab Initio graphs (the graph structure and transformations) can be
