@@ -19,8 +19,8 @@ Fixpoint numExprCompile (ae : AbNumExpr) : PyNumExpr :=
     | AbMulti a1 a2 => PyMulti (numExprCompile a1) (numExprCompile a2)
   end.
 
-(* Converts  AbBinExpr -> PyBinExpr *)
-Fixpoint binExprCompile (b : AbBinExpr) : PyBinExpr :=
+(* Converts  AbBoolExpr -> PyBoolExpr *)
+Fixpoint binExprCompile (b : AbBoolExpr) : PyBoolExpr :=
   match b with
   | BinTrue => PyBinTrue
   | BinFalse => PyBinFalse
@@ -38,6 +38,7 @@ Fixpoint exprCompile (e : AbExpr) : PyExpr :=
   match e with
   | Ab_Num_Expr n => Py_Num_Expr (numExprCompile n)
   | Ab_Bin_Expr b => Py_Bin_Expr (binExprCompile b)
+  | Ab_Enc_Expr e => Py_Enc_Expr (exprCompile e)
   end.
 
 (* Converts  AbCommand -> PyCommand *)
@@ -96,7 +97,7 @@ Qed.
 Theorem exprEquiv : forall ab st,
     AbEval st ab = PyEval st (exprCompile ab).
 Proof.
-  intros. induction ab; simpl in *; try rewrite numExprEquiv; try rewrite binExprEquiv; reflexivity.
+  intros. induction ab; simpl in *; try rewrite numExprEquiv; try rewrite binExprEquiv; try apply IHab; reflexivity.
 Qed.
 
 (*
@@ -117,6 +118,7 @@ Proof.
       induction n; simpl in *; inversion H0; subst; reflexivity.
     + (* Ab_Bin_Expr -> Py_Bin_Expr *)
       induction b; intros; inversion H.
+    + intros. inversion H.
   - (* AbSeq -> PySeq *)
     intros st st'1 st'2 H1 H2.
     inversion H1. inversion H2.

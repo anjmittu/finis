@@ -23,22 +23,23 @@ Inductive AbNumExpr : Type :=
   .
 
 (* Values that result in a bool *)
-Inductive AbBinExpr : Type :=
+Inductive AbBoolExpr : Type :=
   | BinTrue (* True *)
   | BinFalse (* False *)
   | AbIdBool (s : string) (* ID of a boolean stored in the program state *)
-  | AbUnaryOp (b : AbBinExpr) (* Unary Op on a boolean *)
+  | AbUnaryOp (b : AbBoolExpr) (* Unary Op on a boolean *)
   | AbLe (a1 : AbNumExpr) (a2 : AbNumExpr) (* Less than op on two natural numbers *)
   | AbEq (a1 : AbNumExpr) (a2 : AbNumExpr) (* Equal op on two natural numbers *)
   | AbNotEq (a1 : AbNumExpr) (a2 : AbNumExpr) (* Not equal op on two natural numbers *)
-  | AbAnd (b1 : AbBinExpr) (b2 : AbBinExpr) (* And op on two booleans *)
-  | AbOr (b1 : AbBinExpr) (b2 : AbBinExpr) (* Or op on two booleans *)
+  | AbAnd (b1 : AbBoolExpr) (b2 : AbBoolExpr) (* And op on two booleans *)
+  | AbOr (b1 : AbBoolExpr) (b2 : AbBoolExpr) (* Or op on two booleans *)
   .
 
 (* Expressions from the transform language *)
 Inductive AbExpr : Type :=
   | Ab_Num_Expr (a : AbNumExpr)
-  | Ab_Bin_Expr (b : AbBinExpr).
+  | Ab_Bin_Expr (b : AbBoolExpr)
+  | Ab_Enc_Expr (e : AbExpr).
 
 (* Commands from the transform language *)
 Inductive AbCommand : Type :=
@@ -67,7 +68,7 @@ Fixpoint AbEvalNum (st : state) (a : AbNumExpr) : prog_value :=
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint AbEvalBin (st : state) (b : AbBinExpr) : prog_value :=
+Fixpoint AbEvalBin (st : state) (b : AbBoolExpr) : prog_value :=
   match b with
   | BinTrue => pBool true
   | BinFalse => pBool false
@@ -88,6 +89,7 @@ Fixpoint AbEval (st : state) (a : AbExpr) : prog_value :=
   match a with
   | Ab_Num_Expr a => AbEvalNum st a
   | Ab_Bin_Expr b => AbEvalBin st b
+  | Ab_Enc_Expr e => AbEval st e
   end.
 
 (* OPERATIONAL SEMANTICS OF AB INITIO COMMANDS *)
