@@ -26,22 +26,23 @@ Inductive PyNumExpr : Type :=
   .
 
 (* Values that result in a bool *)
-Inductive PyBinExpr : Type :=
+Inductive PyBoolExpr : Type :=
   | PyBinTrue (* True *)
   | PyBinFalse (* False *)
   | PyIdBool (s : string) (* ID of a boolean stored in the program state *)
-  | PyUnaryOp (b : PyBinExpr) (* Unary Op on a boolean *)
+  | PyUnaryOp (b : PyBoolExpr) (* Unary Op on a boolean *)
   | PyLe (a1 : PyNumExpr) (a2 : PyNumExpr) (* Less than op on two natural numbers *)
   | PyEq (a1 : PyNumExpr) (a2 : PyNumExpr) (* Equal op on two natural numbers *)
   | PyNotEq (a1 : PyNumExpr) (a2 : PyNumExpr) (* Not equal op on two natural numbers *)
-  | PyAnd (b1 : PyBinExpr) (b2 : PyBinExpr) (* And op on two booleans *)
-  | PyOr (b1 : PyBinExpr) (b2 : PyBinExpr) (* Or op on two booleans *)
+  | PyAnd (b1 : PyBoolExpr) (b2 : PyBoolExpr) (* And op on two booleans *)
+  | PyOr (b1 : PyBoolExpr) (b2 : PyBoolExpr) (* Or op on two booleans *)
   .
 
 (* Expressions from the python language *)
 Inductive PyExpr : Type :=
   | Py_Num_Expr (a : PyNumExpr)
-  | Py_Bin_Expr (b : PyBinExpr).
+  | Py_Bin_Expr (b : PyBoolExpr)
+  | Py_Enc_Expr (e : PyExpr).
 
 (* Commands from the Python language *)
 Inductive PyCommand : Type :=
@@ -72,7 +73,7 @@ Fixpoint PyEvalNum (st : state) (a : PyNumExpr) : prog_value :=
   end.
 
 (* Evaluation of bool expressions *)
-Fixpoint PyEvalBin (st : state) (b : PyBinExpr) : prog_value :=
+Fixpoint PyEvalBin (st : state) (b : PyBoolExpr) : prog_value :=
   match b with
   | PyBinTrue => pBool true
   | PyBinFalse => pBool false
@@ -93,6 +94,7 @@ Fixpoint PyEval (st : state) (a : PyExpr) : prog_value :=
   match a with
   | Py_Num_Expr a => PyEvalNum st a
   | Py_Bin_Expr b => PyEvalBin st b
+  | Py_Enc_Expr e => PyEval st e
   end.
 
 (* OPERATIONAL SEMANTICS OF PYTHON COMMANDS *)
